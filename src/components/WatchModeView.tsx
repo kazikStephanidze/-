@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Watch, 
   Download, 
@@ -8,11 +8,9 @@ import {
   Check, 
   ZoomIn, 
   ZoomOut, 
-  Maximize2,
-  FileText,
-  HelpCircle,
-  Sparkles,
-  Info
+  Smartphone,
+  Sliders,
+  Maximize2
 } from 'lucide-react';
 import { QUESTIONS_DATA } from '../data/questionsData';
 import { TAXES_DATA } from '../data/taxesData';
@@ -39,10 +37,16 @@ export const WatchModeView: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'q1' | 'q2' | 'q3'>('all');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [watchShape, setWatchShape] = useState<'rect' | 'round' | 'full'>('rect');
-  const [zoomLevel, setZoomLevel] = useState<number>(100); // 80%, 100%, 125%, 150%
-  const [textSizeMode, setTextSizeMode] = useState<'micro' | 'standard' | 'large'>('micro'); // 'micro' for dense watch crib
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [textSizeMode, setTextSizeMode] = useState<'micro' | 'standard' | 'large'>('micro');
   const [copied, setCopied] = useState<boolean>(false);
   const [downloading, setDownloading] = useState<boolean>(false);
+  const [showFiltersMobile, setShowFiltersMobile] = useState<boolean>(false);
+
+  // Touch swipe support for mobile
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Compile unified complete cards for Watch Mode
@@ -95,7 +99,7 @@ export const WatchModeView: React.FC = () => {
     return true;
   });
 
-  const safeIndex = Math.min(currentIndex, filteredCards.length - 1);
+  const safeIndex = Math.min(currentIndex, Math.max(0, filteredCards.length - 1));
   const currentCard = filteredCards[safeIndex] || filteredCards[0];
 
   const handleNext = () => {
@@ -114,6 +118,38 @@ export const WatchModeView: React.FC = () => {
     }
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [safeIndex, filteredCards.length]);
+
+  // Touch Swipe handlers (min swipe distance 50px)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrev();
+    }
+  };
+
   const handleCopyAll = () => {
     if (!currentCard) return;
     const text = `[${currentCard.categoryTag}] ${currentCard.title}\n${currentCard.subtitle}\n\n${currentCard.fullBodyText}\n\n${currentCard.taskSection ? `ЗАДАЧА:\n${currentCard.taskSection.condition}\nРешение: ${currentCard.taskSection.solution}\nОтвет: ${currentCard.taskSection.answer}\nПояснение: ${currentCard.taskSection.howToSolve}` : ''}`;
@@ -129,7 +165,6 @@ export const WatchModeView: React.FC = () => {
 
     try {
       const width = watchShape === 'round' ? 500 : 440;
-      // Calculate dynamic height to fit FULL text without cutting
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -138,11 +173,9 @@ export const WatchModeView: React.FC = () => {
       const padding = 24;
       const maxTextWidth = width - padding * 2;
 
-      // Font styling
       const baseFontSize = textSizeMode === 'micro' ? 12 : textSizeMode === 'standard' ? 14 : 16;
       ctx.font = `${baseFontSize}px system-ui, -apple-system, sans-serif`;
 
-      // Helper function to measure and wrap text lines
       const wrapText = (text: string, maxWidth: number): string[] => {
         const lines: string[] = [];
         const paragraphs = text.split('\n');
@@ -180,11 +213,11 @@ export const WatchModeView: React.FC = () => {
       const lineHeight = baseFontSize + 6;
       const calculatedHeight =
         padding * 2 +
-        50 + // Header tag & subtitle
+        50 +
         titleLines.length * (baseFontSize + 8) +
         bodyLines.length * lineHeight +
         (taskLines.length > 0 ? taskLines.length * lineHeight + 50 : 0) +
-        40; // Footer
+        40;
 
       const height = Math.max(watchShape === 'round' ? 500 : 600, calculatedHeight);
 
@@ -192,19 +225,17 @@ export const WatchModeView: React.FC = () => {
       canvas.height = height * scale;
       ctx.scale(scale, scale);
 
-      // Background OLED Pure Black
+      // OLED Pure Black
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, width, height);
 
       let curY = padding + 16;
 
-      // Category Tag Badge
       ctx.fillStyle = '#10b981';
       ctx.font = 'bold 12px system-ui, sans-serif';
       ctx.fillText(currentCard.categoryTag.toUpperCase(), padding, curY);
       curY += 24;
 
-      // Title
       ctx.fillStyle = '#ffffff';
       ctx.font = `bold ${baseFontSize + 4}px system-ui, sans-serif`;
       titleLines.forEach((tLine) => {
@@ -213,13 +244,11 @@ export const WatchModeView: React.FC = () => {
       });
       curY += 4;
 
-      // Subtitle
       ctx.fillStyle = '#94a3b8';
       ctx.font = '11px system-ui, sans-serif';
       ctx.fillText(currentCard.subtitle, padding, curY);
       curY += 20;
 
-      // Divider line
       ctx.strokeStyle = '#1e293b';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -228,14 +257,12 @@ export const WatchModeView: React.FC = () => {
       ctx.stroke();
       curY += 16;
 
-      // Full Body Text
       ctx.fillStyle = '#e2e8f0';
       ctx.font = `${baseFontSize}px system-ui, sans-serif`;
       bodyLines.forEach((bLine) => {
         if (bLine === '') {
           curY += 8;
         } else {
-          // Highlight key prefixes
           if (bLine.startsWith('•') || bLine.startsWith('✔') || bLine.startsWith('1.') || bLine.startsWith('2.')) {
             ctx.fillStyle = '#f59e0b';
           } else {
@@ -246,7 +273,6 @@ export const WatchModeView: React.FC = () => {
         }
       });
 
-      // Task Box if present
       if (taskLines.length > 0) {
         curY += 12;
         ctx.fillStyle = '#0c4a6e';
@@ -275,13 +301,11 @@ export const WatchModeView: React.FC = () => {
         });
       }
 
-      // Footer
       curY = height - padding;
       ctx.fillStyle = '#64748b';
       ctx.font = '10px system-ui, sans-serif';
       ctx.fillText(currentCard.footerInfo, padding, curY);
 
-      // Download trigger
       const imageUri = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `shpora-full-${currentCard.id}.png`;
@@ -295,138 +319,149 @@ export const WatchModeView: React.FC = () => {
   };
 
   const getTextClass = () => {
-    if (textSizeMode === 'micro') return 'text-[11px] leading-[1.45]';
-    if (textSizeMode === 'large') return 'text-[15px] leading-[1.6]';
-    return 'text-[13px] leading-[1.5]';
+    if (textSizeMode === 'micro') return 'text-[11px] leading-[1.4] sm:text-xs sm:leading-[1.45]';
+    if (textSizeMode === 'large') return 'text-sm sm:text-base leading-relaxed';
+    return 'text-xs sm:text-[13px] leading-relaxed';
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Controls Bar */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-md">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Watch className="w-6 h-6" />
+    <div className="space-y-4 sm:space-y-6">
+      {/* Top Filter & Toolbar Bar */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-xl backdrop-blur-md">
+        {/* Section Title & Mobile Toggle */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <Watch className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
-                  Режим часов с полной информацией (НЕ обрезано!)
+                <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
+                  Режим часов
                 </span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold">
-                  Поддерживает ZOOM
+                <span className="text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                  Свайп влево/вправо
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black text-white mt-0.5">
-                100% полный текст для скриншотов на смарт-часы
+              <h2 className="text-sm sm:text-lg font-black text-white truncate">
+                Карточки OLED для часов и экрана
               </h2>
             </div>
           </div>
 
-          {/* Question Filter Switcher */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-            <button
-              onClick={() => { setActiveCategory('all'); setCurrentIndex(0); }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                activeCategory === 'all'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Все ({watchCards.length})
-            </button>
-            <button
-              onClick={() => { setActiveCategory('q1'); setCurrentIndex(0); }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                activeCategory === 'q1'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              В1: 48 Вопросов (полные)
-            </button>
-            <button
-              onClick={() => { setActiveCategory('q2'); setCurrentIndex(0); }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                activeCategory === 'q2'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              В2: Виды налогов (конспект)
-            </button>
-            <button
-              onClick={() => { setActiveCategory('q3'); setCurrentIndex(0); }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                activeCategory === 'q3'
-                  ? 'bg-sky-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              В3: Задачи (с пояснениями)
-            </button>
-          </div>
+          {/* Mobile Settings Toggle Button */}
+          <button
+            onClick={() => setShowFiltersMobile(!showFiltersMobile)}
+            className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium border border-slate-700 active:scale-95"
+          >
+            <Sliders className="w-3.5 h-3.5 text-amber-400" />
+            <span>Настройки</span>
+          </button>
         </div>
 
-        {/* Toolbar: Text Size, Watch Format, Download */}
-        <div className="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* Category Filter Switcher (Horizontal scrollable on mobile) */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
+          <button
+            onClick={() => { setActiveCategory('all'); setCurrentIndex(0); }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer min-h-[36px] flex items-center ${
+              activeCategory === 'all'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            Все ({watchCards.length})
+          </button>
+          <button
+            onClick={() => { setActiveCategory('q1'); setCurrentIndex(0); }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer min-h-[36px] flex items-center ${
+              activeCategory === 'q1'
+                ? 'bg-emerald-500 text-slate-950 shadow-md'
+                : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            В1: 48 Вопросов (48)
+          </button>
+          <button
+            onClick={() => { setActiveCategory('q2'); setCurrentIndex(0); }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer min-h-[36px] flex items-center ${
+              activeCategory === 'q2'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            В2: Налоги (11)
+          </button>
+          <button
+            onClick={() => { setActiveCategory('q3'); setCurrentIndex(0); }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer min-h-[36px] flex items-center ${
+              activeCategory === 'q3'
+                ? 'bg-sky-500 text-slate-950 shadow-md'
+                : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            В3: Задачи (10)
+          </button>
+        </div>
+
+        {/* Collapsible / Responsive Controls Toolbar */}
+        <div className={`mt-3 pt-3 border-t border-slate-800 flex-wrap items-center justify-between gap-2.5 text-xs ${
+          showFiltersMobile ? 'flex' : 'hidden sm:flex'
+        }`}>
           {/* Format Shape */}
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-medium">Формат:</span>
-            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-0.5">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-slate-400 font-medium text-[11px] sm:text-xs shrink-0">Вид:</span>
+            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-0.5 w-full sm:w-auto overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setWatchShape('rect')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  watchShape === 'rect' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400'
+                className={`flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg transition text-[11px] sm:text-xs text-center font-bold whitespace-nowrap ${
+                  watchShape === 'rect' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-400'
                 }`}
               >
                 Apple Watch
               </button>
               <button
                 onClick={() => setWatchShape('round')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  watchShape === 'round' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400'
+                className={`flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg transition text-[11px] sm:text-xs text-center font-bold whitespace-nowrap ${
+                  watchShape === 'round' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-400'
                 }`}
               >
-                Galaxy Watch (Круг)
+                Круглые
               </button>
               <button
                 onClick={() => setWatchShape('full')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  watchShape === 'full' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400'
+                className={`flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg transition text-[11px] sm:text-xs text-center font-bold whitespace-nowrap ${
+                  watchShape === 'full' ? 'bg-slate-800 text-white shadow-xs' : 'text-slate-400'
                 }`}
               >
-                Полноэкранный лист
+                Лист
               </button>
             </div>
           </div>
 
-          {/* Density / Font Size */}
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-medium">Плотность текста:</span>
-            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-0.5">
+          {/* Text Size */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-slate-400 font-medium text-[11px] sm:text-xs shrink-0">Шрифт:</span>
+            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-0.5 w-full sm:w-auto">
               <button
                 onClick={() => setTextSizeMode('micro')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  textSizeMode === 'micro' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400'
+                className={`flex-1 sm:flex-none px-2 py-1 rounded-lg transition text-[11px] font-bold ${
+                  textSizeMode === 'micro' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'
                 }`}
-                title="Максимум текста на 1 экран, приближается жестом на часах"
               >
-                Микро-шпора (под ЗУМ)
+                Микро
               </button>
               <button
                 onClick={() => setTextSizeMode('standard')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  textSizeMode === 'standard' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400'
+                className={`flex-1 sm:flex-none px-2 py-1 rounded-lg transition text-[11px] font-bold ${
+                  textSizeMode === 'standard' ? 'bg-slate-800 text-white' : 'text-slate-400'
                 }`}
               >
                 Стандарт
               </button>
               <button
                 onClick={() => setTextSizeMode('large')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  textSizeMode === 'large' ? 'bg-slate-800 text-white font-bold' : 'text-slate-400'
+                className={`flex-1 sm:flex-none px-2 py-1 rounded-lg transition text-[11px] font-bold ${
+                  textSizeMode === 'large' ? 'bg-slate-800 text-white' : 'text-slate-400'
                 }`}
               >
                 Крупный
@@ -434,31 +469,33 @@ export const WatchModeView: React.FC = () => {
             </div>
           </div>
 
-          {/* Interactive Zoom buttons inside web view */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2 py-1">
+          {/* Interactive Zoom buttons */}
+          <div className="flex items-center justify-between sm:justify-start gap-1 bg-slate-950 border border-slate-800 rounded-xl px-2 py-1 w-full sm:w-auto">
             <span className="text-slate-400 text-[11px]">Зум:</span>
-            <button
-              onClick={() => setZoomLevel(Math.max(75, zoomLevel - 15))}
-              className="p-1 hover:text-white text-slate-400"
-              title="Уменьшить"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-[11px] font-mono text-amber-400 font-bold">{zoomLevel}%</span>
-            <button
-              onClick={() => setZoomLevel(Math.min(180, zoomLevel + 15))}
-              className="p-1 hover:text-white text-slate-400"
-              title="Увеличить"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setZoomLevel(Math.max(70, zoomLevel - 10))}
+                className="p-1 hover:text-white text-slate-400 touch-manipulation min-w-[28px] min-h-[28px] flex items-center justify-center"
+                title="Уменьшить"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-[11px] font-mono text-amber-400 font-bold min-w-[34px] text-center">{zoomLevel}%</span>
+              <button
+                onClick={() => setZoomLevel(Math.min(150, zoomLevel + 10))}
+                className="p-1 hover:text-white text-slate-400 touch-manipulation min-w-[28px] min-h-[28px] flex items-center justify-center"
+                title="Увеличить"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2">
+          {/* Action buttons (Copy + Download) */}
+          <div className="flex items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0">
             <button
               onClick={handleCopyAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 rounded-xl transition text-xs min-h-[40px]"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Скопировано!' : 'Копировать'}</span>
@@ -466,140 +503,162 @@ export const WatchModeView: React.FC = () => {
             <button
               onClick={handleDownloadPNG}
               disabled={downloading}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md transition"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-xl shadow-md transition text-xs min-h-[40px]"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{downloading ? 'Рендер...' : 'Скачать скриншот PNG'}</span>
+              <span>{downloading ? 'Рендер...' : 'PNG на часы'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Watch Frame Area */}
-      <div className="flex flex-col items-center justify-center py-2">
-        {/* Navigation bar */}
-        <div className="flex items-center justify-between w-full max-w-2xl mb-4 px-2">
+      {/* Main Watch Frame & Content Area */}
+      <div className="flex flex-col items-center justify-center">
+        {/* Navigation Bar (Above Card with Big Touch Hitboxes) */}
+        <div className="flex items-center justify-between w-full max-w-2xl mb-3 px-1">
           <button
             onClick={handlePrev}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-1 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 border border-slate-800 rounded-xl sm:rounded-2xl text-slate-200 text-xs font-bold transition shadow-sm min-h-[44px]"
+            aria-label="Предыдущая карточка"
           >
-            <ChevronLeft className="w-4 h-4" /> Назад
+            <ChevronLeft className="w-4 h-4 text-amber-400" />
+            <span className="hidden xs:inline">Назад</span>
           </button>
-          <div className="text-center">
-            <span className="text-xs font-mono text-amber-400 font-bold bg-amber-500/10 px-4 py-1.5 rounded-full border border-amber-500/30">
-              Карточка {safeIndex + 1} из {filteredCards.length}
+
+          <div className="text-center px-2">
+            <span className="text-xs font-mono text-amber-400 font-bold bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/30 whitespace-nowrap">
+              {safeIndex + 1} / {filteredCards.length}
             </span>
           </div>
+
           <button
             onClick={handleNext}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-1 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 border border-slate-800 rounded-xl sm:rounded-2xl text-slate-200 text-xs font-bold transition shadow-sm min-h-[44px]"
+            aria-label="Следующая карточка"
           >
-            Вперед <ChevronRight className="w-4 h-4" />
+            <span className="hidden xs:inline">Вперед</span>
+            <ChevronRight className="w-4 h-4 text-amber-400" />
           </button>
         </div>
 
-        {/* Watch Bezel Screen */}
-        <div
-          style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
-          className="transition-transform duration-200"
+        {/* Swipe Hint for Mobile */}
+        <div className="sm:hidden text-center text-[10px] text-slate-500 mb-2">
+          👉 Проведите пальцем влево или вправо для смены билета
+        </div>
+
+        {/* Watch Container with Touch Gestures */}
+        <div 
+          className="w-full flex justify-center overflow-x-hidden py-1"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div
-            className={`transition-all duration-300 ${
-              watchShape === 'round'
-                ? 'w-[450px] min-h-[500px] rounded-full border-[12px] border-slate-800 shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden p-8 flex flex-col justify-start bg-black'
-                : watchShape === 'rect'
-                ? 'w-[380px] sm:w-[430px] min-h-[580px] rounded-[44px] border-[14px] border-slate-800 shadow-[0_0_90px_rgba(0,0,0,0.95)] overflow-hidden p-6 bg-black relative ring-1 ring-slate-700/60'
-                : 'w-full max-w-3xl bg-black border-2 border-slate-800 rounded-3xl p-6 shadow-2xl'
-            }`}
+            style={{ 
+              transform: `scale(${zoomLevel / 100})`, 
+              transformOrigin: 'top center',
+              maxWidth: '100%'
+            }}
+            className="transition-transform duration-200 w-full flex justify-center"
           >
-            {/* Top Watch Bar */}
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-2.5 px-1 border-b border-slate-900 pb-1">
-              <span className="text-emerald-400 font-bold">● 100% OLED</span>
-              <span className="text-slate-400 font-medium">Академия управления</span>
-              <span className="text-amber-400 font-bold">РБ 2026</span>
-            </div>
-
-            {/* Content Container (OLED pure black #000000) */}
-            <div ref={cardRef} className="space-y-2.5 text-slate-100">
-              {/* Category tag */}
-              <div className="flex items-center justify-between">
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${currentCard.badgeColor}`}
-                >
-                  {currentCard.categoryTag}
-                </span>
-                <span className="text-[10px] font-mono text-slate-500">
-                  {safeIndex + 1}/{filteredCards.length}
-                </span>
+            <div
+              className={`transition-all duration-300 w-full ${
+                watchShape === 'round'
+                  ? 'max-w-[330px] xs:max-w-[360px] sm:max-w-[440px] rounded-full border-[8px] sm:border-[12px] border-slate-800 shadow-[0_0_60px_rgba(0,0,0,0.95)] overflow-hidden p-5 sm:p-8 flex flex-col justify-start bg-black text-center'
+                  : watchShape === 'rect'
+                  ? 'max-w-[340px] xs:max-w-[370px] sm:max-w-[430px] rounded-[32px] sm:rounded-[44px] border-[8px] sm:border-[12px] border-slate-800 shadow-[0_0_70px_rgba(0,0,0,0.95)] overflow-hidden p-4 sm:p-6 bg-black relative ring-1 ring-slate-700/60'
+                  : 'max-w-3xl bg-black border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl'
+              }`}
+            >
+              {/* Top Watch Bar */}
+              <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-slate-500 mb-2 px-0.5 border-b border-slate-900 pb-1">
+                <span className="text-emerald-400 font-bold">● 100% OLED</span>
+                <span className="text-slate-400 font-medium truncate max-w-[140px]">Академия управления</span>
+                <span className="text-amber-400 font-bold shrink-0">НК 2026</span>
               </div>
 
-              {/* Title */}
-              <div>
-                <h3 className="text-sm sm:text-base font-black text-white leading-tight">
-                  {currentCard.title}
-                </h3>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                  {currentCard.subtitle}
-                </p>
-              </div>
-
-              {/* 100% Full Unabridged Text */}
-              <div
-                className={`bg-slate-950/90 border border-slate-900 rounded-xl p-3 font-sans text-slate-200 whitespace-pre-wrap ${getTextClass()}`}
-              >
-                {currentCard.fullBodyText}
-              </div>
-
-              {/* Task Section if present */}
-              {currentCard.taskSection && (
-                <div className="bg-slate-950 border border-sky-500/30 rounded-xl p-3 space-y-1.5 text-xs">
-                  <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1">
-                    <span>💡 {currentCard.taskSection.title}:</span>
-                  </div>
-                  <p className="text-[11px] text-slate-200 leading-snug">
-                    {currentCard.taskSection.condition}
-                  </p>
-                  <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-[11px] font-mono text-emerald-300">
-                    <span className="text-slate-400 font-sans mr-1">Решение:</span>
-                    {currentCard.taskSection.solution}
-                  </div>
-                  <div className="text-[11px] text-slate-300 flex items-center justify-between pt-0.5">
-                    <span className="font-bold text-white">
-                      Ответ: <span className="font-mono text-amber-300">{currentCard.taskSection.answer}</span>
-                    </span>
-                  </div>
-                  {currentCard.taskSection.howToSolve && (
-                    <div className="pt-1 text-[10px] text-slate-400 border-t border-slate-900 leading-tight">
-                      <span className="text-sky-300 font-semibold">Пояснение: </span>
-                      {currentCard.taskSection.howToSolve}
-                    </div>
-                  )}
+              {/* Content Container (OLED pure black #000000) */}
+              <div ref={cardRef} className="space-y-2 sm:space-y-2.5 text-slate-100 text-left">
+                {/* Category tag */}
+                <div className="flex items-center justify-between gap-1">
+                  <span
+                    className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded border uppercase tracking-wider truncate ${currentCard.badgeColor}`}
+                  >
+                    {currentCard.categoryTag}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                    {safeIndex + 1}/{filteredCards.length}
+                  </span>
                 </div>
-              )}
 
-              {/* Footer */}
-              <div className="pt-2 border-t border-slate-900 text-[9px] text-slate-500 flex items-center justify-between font-mono">
-                <span>{currentCard.footerInfo}</span>
-                <span className="text-emerald-400 font-bold">ПОЛНАЯ ВЫПИСКА</span>
+                {/* Title */}
+                <div>
+                  <h3 className="text-xs sm:text-base font-black text-white leading-tight">
+                    {currentCard.title}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug">
+                    {currentCard.subtitle}
+                  </p>
+                </div>
+
+                {/* 100% Full Unabridged Text */}
+                <div
+                  className={`bg-slate-950/95 border border-slate-900 rounded-xl p-2.5 sm:p-3 font-sans text-slate-200 whitespace-pre-wrap break-words ${getTextClass()}`}
+                >
+                  {currentCard.fullBodyText}
+                </div>
+
+                {/* Task Section if present */}
+                {currentCard.taskSection && (
+                  <div className="bg-slate-950 border border-sky-500/30 rounded-xl p-2.5 sm:p-3 space-y-1.5 text-xs">
+                    <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1">
+                      <span>💡 {currentCard.taskSection.title}:</span>
+                    </div>
+                    <p className="text-[11px] text-slate-200 leading-snug">
+                      {currentCard.taskSection.condition}
+                    </p>
+                    <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-[11px] font-mono text-emerald-300">
+                      <span className="text-slate-400 font-sans mr-1">Решение:</span>
+                      {currentCard.taskSection.solution}
+                    </div>
+                    <div className="text-[11px] text-slate-300 flex items-center justify-between pt-0.5">
+                      <span className="font-bold text-white">
+                        Ответ: <span className="font-mono text-amber-300">{currentCard.taskSection.answer}</span>
+                      </span>
+                    </div>
+                    {currentCard.taskSection.howToSolve && (
+                      <div className="pt-1 text-[10px] text-slate-400 border-t border-slate-900 leading-tight">
+                        <span className="text-sky-300 font-semibold">Пояснение: </span>
+                        {currentCard.taskSection.howToSolve}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="pt-2 border-t border-slate-900 text-[9px] text-slate-500 flex items-center justify-between font-mono">
+                  <span className="truncate mr-1">{currentCard.footerInfo}</span>
+                  <span className="text-emerald-400 font-bold shrink-0">ПОЛНАЯ ШПОРА</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Carousel quick jump bar */}
-        <div className="w-full max-w-3xl mt-6">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-2 px-1">
-            <span>Быстрый переход к билету или налогу:</span>
-            <span>{filteredCards.length} карточек</span>
+        <div className="w-full max-w-3xl mt-4 sm:mt-6">
+          <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5 px-1">
+            <span className="text-[11px] sm:text-xs">Быстрый переход:</span>
+            <span className="text-[11px] text-amber-400/80 font-mono">{filteredCards.length} билетов</span>
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">
+          <div className="flex gap-1.5 overflow-x-auto pb-2 no-scrollbar -mx-1 px-1">
             {filteredCards.map((c, i) => (
               <button
                 key={c.id}
                 onClick={() => setCurrentIndex(i)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold whitespace-nowrap transition ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold whitespace-nowrap transition cursor-pointer min-h-[36px] ${
                   i === safeIndex
-                    ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-400'
+                    ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-400 shadow-sm'
                     : 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800'
                 }`}
               >

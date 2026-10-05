@@ -16,10 +16,9 @@ import {
   Copy,
   Check,
   Watch,
-  BookOpen,
   FileText
 } from 'lucide-react';
-import { TAXES_DATA, TaxDetails } from '../data/taxesData';
+import { TAXES_DATA } from '../data/taxesData';
 
 export const Question2Section: React.FC = () => {
   const [selectedTaxId, setSelectedTaxId] = useState<string>('profit-tax');
@@ -52,40 +51,40 @@ export const Question2Section: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/20 rounded-3xl p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider mb-1">
-              <Building2 className="w-4 h-4" />
-              <span>Вопрос 2 экзаменационного билета (100% полный текст)</span>
+            <div className="flex items-center gap-2 text-amber-400 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider mb-1">
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Вопрос 2 экзаменационного билета</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
-              Виды налогов Республики Беларусь: Полная выписка из конспекта и НК 2026
+            <h2 className="text-base sm:text-xl md:text-2xl font-black text-white leading-tight">
+              Виды налогов Республики Беларусь (Выписка из конспекта и НК 2026)
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              Все 12 листов тетради оцифрованы до единого слова: кто платит, кто освобожден, счета бухучета, нормирование, ставки и сроки
+              Все 12 листов тетради до единого слова: кто платит, льготы, счета бухучета, ставки и сроки
             </p>
           </div>
           <button
             onClick={handleCopyFull}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition self-start sm:self-center"
+            className="flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs rounded-xl shadow-lg transition self-start sm:self-center min-h-[38px]"
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Скопировано!' : 'Копировать полную выписку'}
+            {copied ? 'Скопировано!' : 'Копировать выписку'}
           </button>
         </div>
 
-        {/* Horizontal Tax Badges Selector */}
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">
+        {/* Horizontal Tax Selector (Touch-friendly & smoothly scrollable) */}
+        <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
           {TAXES_DATA.map((t) => (
             <button
               key={t.id}
               onClick={() => setSelectedTaxId(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer min-h-[38px] ${
                 selectedTaxId === t.id
-                  ? 'bg-amber-500 text-slate-950 shadow-lg ring-1 ring-amber-400'
+                  ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-amber-400'
                   : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
               }`}
             >
@@ -95,27 +94,28 @@ export const Question2Section: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Main Grid: Responsive 1-col on mobile, 12-cols on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Left: Complete Detailed Verbatim Notes (8 cols) */}
-        <div className="lg:col-span-8 space-y-5">
+        <div className="lg:col-span-8 space-y-4 sm:space-y-5">
           {/* Main Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
-            <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5">
+            {/* Header info */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
                   {getIcon(selectedTax.id)}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700 font-bold">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] sm:text-xs font-mono uppercase px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700 font-bold">
                       {selectedTax.sourceOfPayment}
                     </span>
-                    <span className="text-xs font-mono text-slate-400">
+                    <span className="text-[10px] sm:text-xs font-mono text-slate-400">
                       Период: {selectedTax.period}
                     </span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                  <h3 className="text-base sm:text-xl md:text-2xl font-black text-white mt-1 leading-snug">
                     {selectedTax.name}
                   </h3>
                 </div>
@@ -123,22 +123,41 @@ export const Question2Section: React.FC = () => {
             </div>
 
             {/* Complete Verbatim Transcript Box */}
-            <div className="bg-slate-950 p-5 rounded-2xl border border-amber-500/30 space-y-2">
-              <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                <span>ПОЛНАЯ ДОСЛОВНАЯ ВЫПИСКА ИЗ РУКОПИСНОГО КОНСПЕКТА (БЕЗ СОКРАЩЕНИЙ):</span>
+            <div className="bg-slate-950 p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-amber-500/30 space-y-2">
+              <div className="text-[11px] sm:text-xs font-bold text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 shrink-0" />
+                <span>ПОЛНАЯ ДОСЛОВНАЯ ВЫПИСКА ИЗ РУКОПИСНОГО КОНСПЕКТА:</span>
               </div>
-              <pre className="text-xs sm:text-sm font-sans text-slate-100 whitespace-pre-wrap leading-relaxed select-text">
+              <div className="text-xs sm:text-sm font-sans text-slate-100 whitespace-pre-wrap break-words leading-relaxed select-text">
                 {selectedTax.fullVerbatimNotes}
-              </pre>
+              </div>
             </div>
 
-            {/* Structured Table: Rates */}
+            {/* Structured Rates: Cards for Mobile, Table for Tablets/Desktop */}
             <div>
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
+              <h4 className="text-[11px] sm:text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                 Сводная таблица ставок по налогу (НК РБ 2026):
               </h4>
-              <div className="overflow-hidden rounded-2xl border border-slate-800">
+
+              {/* Mobile Rate Cards (<640px) */}
+              <div className="sm:hidden space-y-2">
+                {selectedTax.rates.map((rate, i) => (
+                  <div key={i} className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white leading-snug">{rate.title}</span>
+                      <span className="font-mono font-black text-amber-400 text-xs px-2 py-0.5 bg-amber-500/10 rounded-md border border-amber-500/20 shrink-0">
+                        {rate.value}
+                      </span>
+                    </div>
+                    {rate.note && (
+                      <p className="text-[11px] text-slate-400 leading-snug pt-0.5">{rate.note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Tablet/Desktop Table (>=640px) */}
+              <div className="hidden sm:block overflow-hidden rounded-2xl border border-slate-800">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-950 text-slate-400 font-mono text-[11px] uppercase">
                     <tr>
@@ -163,10 +182,10 @@ export const Question2Section: React.FC = () => {
             </div>
 
             {/* Deadlines */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-sky-400 uppercase tracking-wider mb-1">
-                  <Calendar className="w-4 h-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+              <div className="bg-slate-950 p-3.5 sm:p-4 rounded-xl border border-slate-800">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-sky-400 uppercase tracking-wider mb-1">
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>Срок подачи декларации:</span>
                 </div>
                 <p className="text-xs font-medium text-white leading-relaxed">
@@ -174,9 +193,9 @@ export const Question2Section: React.FC = () => {
                 </p>
               </div>
 
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
-                  <Calendar className="w-4 h-4" />
+              <div className="bg-slate-950 p-3.5 sm:p-4 rounded-xl border border-slate-800">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>Срок уплаты налога:</span>
                 </div>
                 <p className="text-xs font-medium text-white leading-relaxed">
@@ -187,41 +206,41 @@ export const Question2Section: React.FC = () => {
 
             {/* Advance payment notice if present */}
             {selectedTax.advancePayments && (
-              <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 text-xs text-amber-200">
-                <div className="font-bold flex items-center gap-2 mb-1 text-amber-300 text-xs">
-                  <AlertCircle className="w-4 h-4" />
+              <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl sm:rounded-2xl p-3.5 sm:p-4 text-xs text-amber-200">
+                <div className="font-bold flex items-center gap-1.5 mb-1 text-amber-300 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>ОСОБЕННОСТЬ УПЛАТЫ АВАНСОВ:</span>
                 </div>
-                <p className="leading-relaxed text-slate-200">{selectedTax.advancePayments}</p>
+                <p className="leading-relaxed text-slate-200 text-xs">{selectedTax.advancePayments}</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right: Watch Full Display Box (4 cols) */}
+        {/* Right: Watch Display Box (4 cols) */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-black border-2 border-slate-800 rounded-3xl p-5 shadow-2xl space-y-3">
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 border-b border-slate-900 pb-2">
+          <div className="bg-black border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl space-y-2.5 sm:space-y-3">
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-slate-500 border-b border-slate-900 pb-2">
               <span className="text-amber-400 font-bold flex items-center gap-1">
-                <Watch className="w-4 h-4" /> ДЛЯ СМАРТ-ЧАСОВ
+                <Watch className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> ДЛЯ СМАРТ-ЧАСОВ
               </span>
               <span className="text-slate-400">ПОЛНАЯ ШПОРА</span>
             </div>
 
-            <div className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded w-fit uppercase">
+            <div className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded w-fit uppercase">
               {selectedTax.shortName}
             </div>
 
-            <h4 className="text-sm font-black text-white leading-tight">
+            <h4 className="text-xs sm:text-sm font-black text-white leading-tight">
               {selectedTax.name}
             </h4>
 
             {/* Full Dense Watch Text */}
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-900 text-[11px] leading-[1.45] text-slate-200 font-sans whitespace-pre-wrap">
+            <div className="bg-slate-950 p-3 sm:p-3.5 rounded-xl border border-slate-900 text-[11px] leading-[1.45] text-slate-200 font-sans whitespace-pre-wrap break-words">
               {selectedTax.watchDetailedText}
             </div>
 
-            <div className="pt-2 text-[10px] text-slate-500 font-mono text-center">
+            <div className="pt-1 text-[10px] text-slate-500 font-mono text-center">
               Текст подготовлен под приближение жестом на часах
             </div>
           </div>
