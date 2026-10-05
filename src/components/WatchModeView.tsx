@@ -43,10 +43,6 @@ export const WatchModeView: React.FC = () => {
   const [downloading, setDownloading] = useState<boolean>(false);
   const [showFiltersMobile, setShowFiltersMobile] = useState<boolean>(false);
 
-  // Touch swipe support for mobile
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Compile unified complete cards for Watch Mode
@@ -127,28 +123,6 @@ export const WatchModeView: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [safeIndex, filteredCards.length]);
-
-  // Touch Swipe handlers (min swipe distance 50px)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-    if (isLeftSwipe) {
-      handleNext();
-    } else if (isRightSwipe) {
-      handlePrev();
-    }
-  };
 
   const handleCopyAll = () => {
     if (!currentCard) return;
@@ -340,7 +314,7 @@ export const WatchModeView: React.FC = () => {
                   Режим часов
                 </span>
                 <span className="text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                  Свайп влево/вправо
+                  Кнопки Назад / Вперед
                 </span>
               </div>
               <h2 className="text-sm sm:text-lg font-black text-white truncate">
@@ -541,18 +515,8 @@ export const WatchModeView: React.FC = () => {
           </button>
         </div>
 
-        {/* Swipe Hint for Mobile */}
-        <div className="sm:hidden text-center text-[10px] text-slate-500 mb-2">
-          👉 Проведите пальцем влево или вправо для смены билета
-        </div>
-
-        {/* Watch Container with Touch Gestures */}
-        <div 
-          className="w-full flex justify-center overflow-x-hidden py-1"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
+        {/* Watch Container */}
+        <div className="w-full flex justify-center overflow-x-hidden py-1">
           <div
             style={{ 
               transform: `scale(${zoomLevel / 100})`, 

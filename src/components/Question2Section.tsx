@@ -133,6 +133,80 @@ export const Question2Section: React.FC = () => {
               </div>
             </div>
 
+            {/* 5 Distinct Sub-Objects of Taxation (specifically for Ecological Tax) */}
+            {selectedTax.subObjects && selectedTax.subObjects.length > 0 && (
+              <div className="bg-slate-950 p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-emerald-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <h4 className="text-xs sm:text-sm font-black text-emerald-400 uppercase tracking-wider">
+                      Все 5 объектов налогообложения (разбивка по подпунктам):
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30 self-start sm:self-auto font-bold">
+                    Отдельная декларация по каждому объекту
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
+                  {selectedTax.subObjects.map((sub) => (
+                    <div 
+                      key={sub.number}
+                      className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-4 space-y-2 hover:border-emerald-500/40 transition"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono font-black text-xs flex items-center justify-center shrink-0">
+                            {sub.number}
+                          </span>
+                          <h5 className="text-xs sm:text-sm font-bold text-white leading-snug">
+                            {sub.title}
+                          </h5>
+                        </div>
+                        {sub.number === 3 && (
+                          <span className="text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded shrink-0">
+                            Из скриншота конспекта
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Tax Base */}
+                      <div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80 text-xs space-y-0.5">
+                        <span className="text-[10px] font-mono uppercase font-bold text-amber-400 block">
+                          Налогооблагаемая база (НО база):
+                        </span>
+                        <p className="text-slate-200 text-xs leading-relaxed">
+                          {sub.taxBase}
+                        </p>
+                      </div>
+
+                      {/* Non-Objects */}
+                      <div className="bg-slate-950/80 p-2.5 rounded-lg border border-rose-950/40 text-xs space-y-0.5">
+                        <span className="text-[10px] font-mono uppercase font-bold text-rose-400 block">
+                          НЕ является объектом налогообложения (льготы / исключения):
+                        </span>
+                        <ul className="space-y-1 text-slate-300 text-xs pt-0.5">
+                          {sub.nonObjects.map((noObj, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5">
+                              <span className="text-rose-400 font-bold shrink-0">•</span>
+                              <span className="leading-snug">{noObj}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {sub.notes && (
+                        <div className="text-[11px] text-slate-400 pt-0.5 leading-snug">
+                          <span className="text-slate-500 font-mono uppercase text-[10px] mr-1">Примечание:</span>
+                          {sub.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Structured Rates: Cards for Mobile, Table for Tablets/Desktop */}
             <div>
               <h4 className="text-[11px] sm:text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
