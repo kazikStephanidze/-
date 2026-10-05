@@ -446,21 +446,66 @@ export const WatchModeView: React.FC = () => {
           {/* Interactive Zoom buttons */}
           <div className="flex items-center justify-between sm:justify-start gap-1 bg-slate-950 border border-slate-800 rounded-xl px-2 py-1 w-full sm:w-auto">
             <span className="text-slate-400 text-[11px]">Зум:</span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <button
-                onClick={() => setZoomLevel(Math.max(70, zoomLevel - 10))}
-                className="p-1 hover:text-white text-slate-400 touch-manipulation min-w-[28px] min-h-[28px] flex items-center justify-center"
-                title="Уменьшить"
+                onClick={() => setZoomLevel(Math.max(25, zoomLevel - 10))}
+                className="p-1 hover:text-white text-slate-400 touch-manipulation min-w-[28px] min-h-[28px] flex items-center justify-center cursor-pointer"
+                title="Уменьшить (до 25%)"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[11px] font-mono text-amber-400 font-bold min-w-[34px] text-center">{zoomLevel}%</span>
               <button
-                onClick={() => setZoomLevel(Math.min(150, zoomLevel + 10))}
-                className="p-1 hover:text-white text-slate-400 touch-manipulation min-w-[28px] min-h-[28px] flex items-center justify-center"
-                title="Увеличить"
+                onClick={() => setZoomLevel(100)}
+                className="text-[11px] font-mono text-amber-400 font-bold min-w-[34px] text-center hover:underline cursor-pointer"
+                title="Нажмите для сброса на 100%"
+              >
+                {zoomLevel}%
+              </button>
+              <button
+                onClick={() => setZoomLevel(Math.min(160, zoomLevel + 10))}
+                className="p-1 hover:text-white text-slate-400 touch-manipulation min-w-[28px] min-h-[28px] flex items-center justify-center cursor-pointer"
+                title="Увеличить (до 160%)"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {/* Quick scale presets */}
+            <div className="flex items-center gap-1 pl-1 border-l border-slate-800">
+              <button
+                onClick={() => setZoomLevel(35)}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition ${
+                  zoomLevel <= 35 ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+                title="Микро-масштаб 35%"
+              >
+                35%
+              </button>
+              <button
+                onClick={() => setZoomLevel(50)}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition ${
+                  zoomLevel === 50 ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+                title="50%"
+              >
+                50%
+              </button>
+              <button
+                onClick={() => setZoomLevel(75)}
+                className={`hidden xs:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition ${
+                  zoomLevel === 75 ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+                title="75%"
+              >
+                75%
+              </button>
+              <button
+                onClick={() => setZoomLevel(100)}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition ${
+                  zoomLevel === 100 ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+                title="100%"
+              >
+                100%
               </button>
             </div>
           </div>
